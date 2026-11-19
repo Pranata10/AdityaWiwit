@@ -498,3 +498,21 @@ function closeLightbox() {
   const modal = document.getElementById("imageLightbox");
   if (modal) modal.style.display = "none";
 }
+
+// Jalankan semua background video (intro, globalVideo, closing) setelah user klik Buka Undangan
+document.querySelectorAll("video.bg-video").forEach((vid) => {
+  vid.muted = true;
+  vid.playsInline = true;
+  if (vid.paused) {
+    vid.play().catch(() => {});
+  }
+});
+
+const resumeAllBgVideos = () => {
+  document.querySelectorAll("video.bg-video").forEach((vid) => {
+    vid.muted = true;
+    if (vid.paused) vid.play().catch(() => {});
+  });
+};
+document.addEventListener("touchstart", resumeAllBgVideos, { once: true, passive: true });
+document.addEventListener("click", resumeAllBgVideos, { once: true });
