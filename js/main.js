@@ -3,128 +3,153 @@
   const $ = (s, root = document) => root.querySelector(s);
   const $$ = (s, root = document) => [...root.querySelectorAll(s)];
 
-  const couple = `${data.names?.first || "Aditya"} & ${data.names?.second || "Wiwit"}`;
-
-  // ==========================================
-  // 1. WEDDING NAMES & DATE (DARI CONFIG.JS)
-  // ==========================================
-  $$("[data-name='bride']").forEach(el => {
-    el.textContent = data.names?.first || "Aditya";
-  });
-
-  $$("[data-name='groom']").forEach(el => {
-    el.textContent = data.names?.second || "Wiwit";
-  });
-
-  $$("[data-name='couple']").forEach(el => {
-    el.textContent = couple;
-  });
-
-  $$("[data-date-label]").forEach(el => {
-    el.textContent = data.dateLabel || "";
-  });
-
-  // ==========================================
-  // 2. BACKGROUND & GALLERY IMAGES (CONFIG)
-  // ==========================================
-  $$("[data-image]").forEach(el => {
-    const key = el.dataset.image;
-    const url = data.images?.[key];
-    if (url) el.style.backgroundImage = `url("${url}")`;
-  });
-
-  $$("[data-gallery]").forEach(el => {
-    const url = data.gallery?.[Number(el.dataset.gallery)];
-    if (url) el.src = url;
-  });
-
-  // ==========================================
-  // 3. WEDDING EVENTS & GIFT (CONFIG)
-  // ==========================================
-  ["ceremony", "reception"].forEach(key => {
-    const event = data.events?.[key];
-    if (!event) return;
-
-    ["date", "time", "place"].forEach(field => {
-      const el = $(`[data-event="${key}-${field}"]`);
-      if (el) el.innerHTML = String(event[field] || "").replace(/\n/g, "<br>");
-    });
-
-    const map = $(`[data-map="${key}"]`);
-    if (map && event.map) map.href = event.map;
-  });
-
-  $$("[data-gift]").forEach(el => {
-    const field = el.dataset.gift;
-    if (data.gift?.[field]) el.textContent = data.gift[field];
-  });
-
-  // ==========================================
-  // 4. HAMBURGER NAVIGATION
-  // ==========================================
-  const toggle = $("#menuToggle");
-  const menu = $("#menu");
-
-  toggle?.addEventListener("click", () => {
-    const open = menu.classList.toggle("open");
-    toggle.classList.toggle("active", open);
-    toggle.setAttribute("aria-expanded", String(open));
-  });
-
-  $$("#menu a").forEach(a => {
-    a.addEventListener("click", () => {
-      menu.classList.remove("open");
-      toggle?.classList.remove("active");
-      toggle?.setAttribute("aria-expanded", "false");
-    });
-  });
-
-  // ==========================================
-  // 5. COUNTDOWN TIMER
-  // ==========================================
-  const target = new Date(data.date || "2026-12-12T10:00:00+08:00").getTime();
-
-  function tick() {
-    let diff = Math.max(0, target - Date.now());
-    const units = {
-      days: 86400000,
-      hours: 3600000,
-      minutes: 60000,
-      seconds: 1000
-    };
-
-    Object.entries(units).forEach(([id, size]) => {
-      const el = document.getElementById(id);
-      if (el) {
-        el.textContent = String(Math.floor(diff / size)).padStart(2, "0");
-        diff %= size;
-      }
-    });
+  // Helper agar kode tetap jalan baik sebelum maupun sesudah DOMContentLoaded
+  function onReady(fn) {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", fn);
+    } else {
+      fn();
+    }
   }
 
-  tick();
-  setInterval(tick, 1000);
+  const couple = `${data.names?.first || "Aditya"} & ${data.names?.second || "Wiwit"}`;
 
-  // ==========================================
-  // 6. SCROLL REVEAL ANIMATION
-  // ==========================================
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("visible");
-        observer.unobserve(entry.target);
-      }
+  onReady(function () {
+    // ==========================================
+    // 1. WEDDING NAMES & DATE (DARI CONFIG.JS)
+    // ==========================================
+    $$("[data-name='bride']").forEach(el => {
+      el.textContent = data.names?.first || "Aditya";
     });
-  }, { threshold: 0.12 });
 
-  $$(".reveal").forEach(el => observer.observe(el));
+    $$("[data-name='groom']").forEach(el => {
+      el.textContent = data.names?.second || "Wiwit";
+    });
 
-  // ==========================================
-  // 7. INITIALIZATION SAAT HALAMAN SIAP
-  // ==========================================
-  document.addEventListener("DOMContentLoaded", function () {
-    
-    // --- A. LOADER (1% -> 100%) ---
+    $$("[data-name='couple']").forEach(el => {
+      el.textContent = couple;
+    });
+
+    $$("[data-date-label]").forEach(el => {
+      el.textContent = data.dateLabel || "";
+    });
+
+    // ==========================================
+    // 2. NAMA TAMU DARI URL (?to= atau ?guest=)
+    // ==========================================
+    const params = new URLSearchParams(window.location.search);
+    const rawGuest = params.get("to") || params.get("guest") || params.get("u");
+    if (rawGuest) {
+      const cleanName = rawGuest.replace(/\?+$/, "").trim();
+      if (cleanName) {
+        $$("#guestName, #guest-name, .guest-name, [data-guest]").forEach(el => {
+          el.textContent = cleanName;
+        });
+        const rsvpNameInput = $("#rsvpForm input[name='name']");
+        if (rsvpNameInput && !rsvpNameInput.value) {
+          rsvpNameInput.value = cleanName;
+        }
+      }
+    }
+
+    // ==========================================
+    // 3. BACKGROUND & GALLERY IMAGES (CONFIG)
+    // ==========================================
+    $$("[data-image]").forEach(el => {
+      const key = el.dataset.image;
+      const url = data.images?.[key];
+      if (url) el.style.backgroundImage = `url("${url}")`;
+    });
+
+    $$("[data-gallery]").forEach(el => {
+      const url = data.gallery?.[Number(el.dataset.gallery)];
+      if (url) el.src = url;
+    });
+
+    // ==========================================
+    // 4. WEDDING EVENTS & GIFT (CONFIG)
+    // ==========================================
+    ["ceremony", "reception"].forEach(key => {
+      const event = data.events?.[key];
+      if (!event) return;
+
+      ["date", "time", "place"].forEach(field => {
+        const el = $(`[data-event="${key}-${field}"]`);
+        if (el) el.innerHTML = String(event[field] || "").replace(/\n/g, "<br>");
+      });
+
+      const map = $(`[data-map="${key}"]`);
+      if (map && event.map) map.href = event.map;
+    });
+
+    $$("[data-gift]").forEach(el => {
+      const field = el.dataset.gift;
+      if (data.gift?.[field]) el.textContent = data.gift[field];
+    });
+
+    // ==========================================
+    // 5. HAMBURGER NAVIGATION
+    // ==========================================
+    const toggle = $("#menuToggle");
+    const menu = $("#menu");
+
+    toggle?.addEventListener("click", () => {
+      const open = menu.classList.toggle("open");
+      toggle.classList.toggle("active", open);
+      toggle.setAttribute("aria-expanded", String(open));
+    });
+
+    $$("#menu a").forEach(a => {
+      a.addEventListener("click", () => {
+        menu.classList.remove("open");
+        toggle?.classList.remove("active");
+        toggle?.setAttribute("aria-expanded", "false");
+      });
+    });
+
+    // ==========================================
+    // 6. COUNTDOWN TIMER
+    // ==========================================
+    const target = new Date(data.date || "2026-12-12T10:00:00+08:00").getTime();
+
+    function tick() {
+      let diff = Math.max(0, target - Date.now());
+      const units = {
+        days: 86400000,
+        hours: 3600000,
+        minutes: 60000,
+        seconds: 1000
+      };
+
+      Object.entries(units).forEach(([id, size]) => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.textContent = String(Math.floor(diff / size)).padStart(2, "0");
+          diff %= size;
+        }
+      });
+    }
+
+    tick();
+    setInterval(tick, 1000);
+
+    // ==========================================
+    // 7. SCROLL REVEAL ANIMATION
+    // ==========================================
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    $$(".reveal").forEach(el => observer.observe(el));
+
+    // ==========================================
+    // 8. LOADER (1% -> 100%)
+    // ==========================================
     const loader = document.getElementById("loader");
     const loaderNumber = document.getElementById("loaderNumber");
 
@@ -147,15 +172,9 @@
       }, 20);
     }
 
-    // --- B. NAMA TAMU DARI URL (?to= atau ?guest=) ---
-    const guestNameEl = document.getElementById("guestName");
-    const params = new URLSearchParams(window.location.search);
-    const toParam = params.get("to") || params.get("guest");
-    if (guestNameEl && toParam && toParam.trim() !== "") {
-      guestNameEl.textContent = toParam.trim();
-    }
-
-    // --- C. TOMBOL BUKA UNDANGAN ---
+    // ==========================================
+    // 9. TOMBOL BUKA UNDANGAN
+    // ==========================================
     const openBtn = document.getElementById("openInvitation");
     const guestCover = document.getElementById("guestCover");
     const bgMusic = document.getElementById("bgMusic");
@@ -206,7 +225,46 @@
       });
     }
 
-    // --- D. DOWNLOAD FOTO DI LIGHTBOX ---
+    // ==========================================
+    // 10. AUTOPLAY YOUTUBE PREWEDDING SAAT TERLIHAT
+    // ==========================================
+    const prewedSection = document.getElementById("prewed-video");
+    const prewedIframe = document.getElementById("prewedYoutubeIframe");
+
+    if (prewedSection && prewedIframe) {
+      const sendYTCommand = (func) => {
+        if (!prewedIframe.contentWindow) return;
+        prewedIframe.contentWindow.postMessage(
+          JSON.stringify({ event: "command", func, args: [] }),
+          "*"
+        );
+      };
+
+      prewedIframe.addEventListener("load", () => {
+        prewedIframe.contentWindow?.postMessage(
+          JSON.stringify({ event: "listening" }),
+          "*"
+        );
+      });
+
+      const ytObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              sendYTCommand("mute");
+              sendYTCommand("playVideo");
+            }
+          });
+        },
+        { threshold: 0.35 }
+      );
+
+      ytObserver.observe(prewedSection);
+    }
+
+    // ==========================================
+    // 11. DOWNLOAD FOTO DI LIGHTBOX
+    // ==========================================
     const downloadBtn = document.getElementById("downloadBtn");
     if (downloadBtn) {
       downloadBtn.addEventListener("click", async function (e) {
@@ -243,7 +301,9 @@
       });
     }
 
-    // --- E. RSVP & GOOGLE SHEETS + PAGINATION ---
+    // ==========================================
+    // 12. RSVP & GOOGLE SHEETS + PAGINATION
+    // ==========================================
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4W7sFprk_qx2WvDPrzRHj_dqMefFTVV9oYIImvP0Fo0lg9ccyOUxUTOStpr5h8QS6tg/exec";
     const ITEMS_PER_PAGE = 4;
 
@@ -437,32 +497,4 @@ function openLightbox(imgSrc) {
 function closeLightbox() {
   const modal = document.getElementById("imageLightbox");
   if (modal) modal.style.display = "none";
-}
-
-// ==========================================
-// AUTOPLAY YOUTUBE PREWEDDING SAAT TERLIHAT
-// ==========================================
-const prewedSection = document.getElementById("prewed-video");
-const prewedIframe = document.getElementById("prewedYoutubeIframe");
-
-if (prewedSection && prewedIframe) {
-  const ytObserver = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting && prewedIframe.contentWindow) {
-          prewedIframe.contentWindow.postMessage(
-            JSON.stringify({ event: "command", func: "mute", args: [] }),
-            "*"
-          );
-          prewedIframe.contentWindow.postMessage(
-            JSON.stringify({ event: "command", func: "playVideo", args: [] }),
-            "*"
-          );
-        }
-      });
-    },
-    { threshold: 0.35 }
-  );
-
-  ytObserver.observe(prewedSection);
 }
