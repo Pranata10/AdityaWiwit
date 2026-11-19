@@ -252,79 +252,55 @@
     // 10. AUTOPLAY YOUTUBE PREWEDDING SAAT TERLIHAT
     // ==========================================
     const prewedSection = document.getElementById("prewed-video");
-    const prewedIframe = document.getElementById("prewedYoutubeIframe");
+const prewedIframe = document.getElementById("prewedYoutubeIframe");
 
-    if (prewedSection && prewedIframe) {
-      let shouldAutoplayYT = false;
+if (prewedSection && prewedIframe) {
+  let isPrewedVisible = false;
 
-      // Pastikan parameter enablejsapi=1 dan mute=1 ada di URL iframe
-      try {
-        const currentSrc = prewedIframe.getAttribute("src") || "";
-        if (currentSrc) {
-          const urlObj = new URL(currentSrc, window.location.origin);
-          if (!urlObj.searchParams.has("enablejsapi")) {
-            urlObj.searchParams.set("enablejsapi", "1");
-          }
-          if (!urlObj.searchParams.has("mute")) {
-            urlObj.searchParams.set("mute", "1");
-          }
-          if (!urlObj.searchParams.has("playsinline")) {
-            urlObj.searchParams.set("playsinline", "1");
-          }
-          if (!urlObj.searchParams.has("origin") && window.location.origin.startsWith("http")) {
-            urlObj.searchParams.set("origin", window.location.origin);
-          }
-          const updatedSrc = urlObj.toString();
-          if (updatedSrc !== currentSrc) {
-            prewedIframe.setAttribute("src", updatedSrc);
-          }
-        }
-      } catch (_) {}
+  const sendYTCommand = (func, args = []) => {
+    if (!prewedIframe.contentWindow) return;
+    prewedIframe.contentWindow.postMessage(
+      JSON.stringify({ event: "command", func, args }),
+      "*"
+    );
+  };
 
-      const sendYTCommand = (func, args = []) => {
-        if (!prewedIframe.contentWindow) return;
-        prewedIframe.contentWindow.postMessage(
-          JSON.stringify({ event: "command", func, args }),
-          "*"
-        );
-      };
+  const kickYTPlay = () => {
+    if (!prewedIframe.contentWindow) return;
+    prewedIframe.contentWindow.postMessage(
+      JSON.stringify({
+        event: "listening",
+        id: prewedIframe.id || "prewedYoutubeIframe"
+      }),
+      "*"
+    );
+    sendYTCommand("mute");
+    sendYTCommand("playVideo");
+  };
 
-      const triggerYTPlay = () => {
-        if (!prewedIframe.contentWindow) return;
-        prewedIframe.contentWindow.postMessage(
-          JSON.stringify({ event: "listening", id: prewedIframe.id || "prewedYoutubeIframe" }),
-          "*"
-        );
-        sendYTCommand("mute");
-        sendYTCommand("playVideo");
-      };
+  prewedIframe.addEventListener("load", () => {
+    if (isPrewedVisible) {
+      setTimeout(kickYTPlay, 250);
+      setTimeout(kickYTPlay, 800);
+    }
+  });
 
-      prewedIframe.addEventListener("load", () => {
-        if (shouldAutoplayYT) {
-          setTimeout(triggerYTPlay, 200);
+  const ytObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        isPrewedVisible = entry.isIntersecting;
+        if (isPrewedVisible) {
+          kickYTPlay();
+          setTimeout(kickYTPlay, 350);
+          setTimeout(kickYTPlay, 900);
         }
       });
+    },
+    { threshold: 0.25 }
+  );
 
-      const ytObserver = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              shouldAutoplayYT = true;
-              triggerYTPlay();
-              setTimeout(() => {
-                if (shouldAutoplayYT) sendYTCommand("playVideo");
-              }, 450);
-            } else {
-              shouldAutoplayYT = false;
-            }
-          });
-        },
-        { threshold: 0.25 }
-      );
-
-      ytObserver.observe(prewedSection);
-    }
-
+  ytObserver.observe(prewedSection);
+}
     // ==========================================
     // 11. DOWNLOAD FOTO DI LIGHTBOX & KEYBOARD ESC
     // ==========================================
