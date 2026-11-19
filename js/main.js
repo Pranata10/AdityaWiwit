@@ -438,3 +438,31 @@ function closeLightbox() {
   const modal = document.getElementById("imageLightbox");
   if (modal) modal.style.display = "none";
 }
+
+// ==========================================
+// AUTOPLAY YOUTUBE PREWEDDING SAAT TERLIHAT
+// ==========================================
+const prewedSection = document.getElementById("prewed-video");
+const prewedIframe = document.getElementById("prewedYoutubeIframe");
+
+if (prewedSection && prewedIframe) {
+  const ytObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && prewedIframe.contentWindow) {
+          prewedIframe.contentWindow.postMessage(
+            JSON.stringify({ event: "command", func: "mute", args: [] }),
+            "*"
+          );
+          prewedIframe.contentWindow.postMessage(
+            JSON.stringify({ event: "command", func: "playVideo", args: [] }),
+            "*"
+          );
+        }
+      });
+    },
+    { threshold: 0.35 }
+  );
+
+  ytObserver.observe(prewedSection);
+}
