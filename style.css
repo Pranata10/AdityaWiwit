@@ -8,7 +8,9 @@
   --sans: 'Montserrat', Arial, sans-serif;
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
 }
@@ -16,14 +18,18 @@
 html {
   scroll-behavior: smooth;
   font-size: 16px;
+  width: 100%;
+  overflow-x: clip;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
-html, body {
+body {
   width: 100%;
   max-width: 100%;
   margin: 0;
   padding: 0;
-  overflow-x: hidden !important;
+  overflow-x: clip;
   position: relative;
   background: var(--ink);
   color: var(--paper);
@@ -31,6 +37,13 @@ html, body {
   font-weight: 300;
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
+}
+
+main,
+section {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 html::-webkit-scrollbar,
@@ -54,9 +67,11 @@ textarea {
   font: inherit;
 }
 
-img, video, iframe, object {
+img,
+video,
+iframe,
+object {
   max-width: 100%;
-  height: auto;
 }
 
 /* =================================
@@ -421,6 +436,7 @@ body.lock-scroll {
   text-align: center;
   overflow: hidden;
   padding: 48px 20px;
+  z-index: 2;
 }
 
 .intro .bg-video,
@@ -440,7 +456,6 @@ body.lock-scroll {
   z-index: 1;
 }
 
-/* Override posisi absolute bawaan .hero-copy khusus di dalam .intro */
 .intro .hero-copy {
   position: relative;
   left: auto;
@@ -484,6 +499,7 @@ body.lock-scroll {
   min-height: 460px;
   position: relative;
   overflow: hidden;
+  z-index: 2;
 }
 
 .portrait-bg {
@@ -529,6 +545,7 @@ body.lock-scroll {
   background-position: center;
   background-repeat: no-repeat;
   padding: clamp(48px, 8vw, 70px) clamp(20px, 6vw, 60px);
+  z-index: 2;
 }
 
 .quote-photo-section .shade {
@@ -600,6 +617,8 @@ body.lock-scroll {
    LOVE STORY SECTION
 ================================= */
 .story {
+  position: relative;
+  z-index: 2;
   background: #e7e3db;
   color: #252321;
 }
@@ -661,6 +680,7 @@ body.lock-scroll {
   background-position: center 20%;
   background-repeat: no-repeat;
   padding: clamp(60px, 8vw, 80px) clamp(20px, 6vw, 60px);
+  z-index: 2;
 }
 
 #bride {
@@ -751,6 +771,7 @@ body.lock-scroll {
   text-align: center;
   overflow: hidden;
   padding: clamp(75px, 10vw, 100px) 20px;
+  z-index: 2;
 }
 
 .events-video-content {
@@ -839,7 +860,7 @@ body.lock-scroll {
   text-align: center;
   overflow: hidden;
   padding: clamp(80px, 12vw, 120px) 20px;
-  background-color: var(--ink);
+  z-index: 2;
 }
 
 .countdown-content {
@@ -902,7 +923,7 @@ body.lock-scroll {
   text-align: center;
   overflow: hidden;
   padding: clamp(75px, 10vw, 100px) 20px;
-  background-color: var(--ink);
+  z-index: 2;
 }
 
 .gift-video-content {
@@ -1015,7 +1036,7 @@ body.lock-scroll {
   justify-content: center;
   text-align: center;
   padding: clamp(75px, 10vw, 100px) 20px;
-  background-color: var(--ink);
+  z-index: 2;
 }
 
 .rsvp-video-content {
@@ -1051,7 +1072,6 @@ body.lock-scroll {
   margin-bottom: 32px;
 }
 
-/* Font-size 16px di mobile mencegah Safari iOS melakukan auto-zoom saat mengetik */
 .rsvp-boxed-form input,
 .rsvp-boxed-form textarea,
 .rsvp-boxed-form select {
@@ -1223,6 +1243,8 @@ body.lock-scroll {
    AESTHETIC GALLERY SECTION
 ================================= */
 .gallery-section {
+  position: relative;
+  z-index: 2;
   background: #171615;
   color: var(--paper);
   text-align: center;
@@ -1342,6 +1364,7 @@ body.lock-scroll {
 ================================= */
 .prewed-video-section {
   position: relative;
+  z-index: 2;
   background: linear-gradient(
       to bottom,
       rgba(23, 22, 21, 0.95) 0%,
@@ -1394,6 +1417,7 @@ body.lock-scroll {
 ================================= */
 .closing-video-section {
   position: relative;
+  z-index: 2;
   min-height: 100svh;
   display: flex;
   align-items: center;
@@ -1406,11 +1430,10 @@ body.lock-scroll {
 
 .closing-video-section .bg-video {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  inset: 0;
   width: 100%;
   height: 100%;
-  transform: translate(-50%, -50%);
+  transform: none;
   object-fit: cover;
   z-index: 0;
 }
@@ -1524,18 +1547,19 @@ body.lock-scroll {
   width: 100%;
   height: 100dvh;
   overflow: hidden;
-  z-index: -999;
+  z-index: 0;
+  pointer-events: none;
   background-color: var(--ink);
 }
 
 .global-video-container .bg-video {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  inset: 0;
   width: 100%;
   height: 100%;
-  transform: translate(-50%, -50%);
+  transform: none;
   object-fit: cover;
+  object-position: center;
 }
 
 .global-video-container .global-shade {
@@ -1577,15 +1601,12 @@ body.lock-scroll {
 /* =================================
    MEDIA QUERIES (TABLET & MOBILE)
 ================================= */
-
-/* Tablet & iPad (768px - 1024px) */
 @media (max-width: 1024px) {
   .story-grid {
     gap: 40px;
   }
 }
 
-/* Mobile Landscape & Portrait (<= 767px) */
 @media (max-width: 767px) {
   .story-grid {
     grid-template-columns: 1fr;
@@ -1610,7 +1631,6 @@ body.lock-scroll {
   }
 }
 
-/* Mobile Kecil (<= 380px seperti iPhone SE / Galaxy Fold) */
 @media (max-width: 380px) {
   .section-pad {
     padding: 64px 16px;
