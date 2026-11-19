@@ -3,13 +3,27 @@
   const $ = (s, root = document) => root.querySelector(s);
   const $$ = (s, root = document) => [...root.querySelectorAll(s)];
 
-  // Helper agar kode tetap jalan baik sebelum maupun sesudah DOMContentLoaded
   function onReady(fn) {
     if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", fn);
+      document.addEventListener("DOMContentLoaded", fn, { once: true });
     } else {
       fn();
     }
+  }
+
+  function playAllBgVideos() {
+    $$("video.bg-video").forEach((vid) => {
+      vid.muted = true;
+      vid.defaultMuted = true;
+      vid.playsInline = true;
+      vid.setAttribute("muted", "");
+      vid.setAttribute("playsinline", "");
+      vid.setAttribute("webkit-playsinline", "");
+      const promise = vid.play();
+      if (promise && typeof promise.catch === "function") {
+        promise.catch(() => {});
+      }
+    });
   }
 
   const couple = `${data.names?.first || "Aditya"} & ${data.names?.second || "Wiwit"}`;
@@ -18,35 +32,35 @@
     // ==========================================
     // 1. WEDDING NAMES & DATE (DARI CONFIG.JS)
     // ==========================================
-    $$("[data-name='bride']").forEach(el => {
+    $$("[data-name='bride']").forEach((el) => {
       el.textContent = data.names?.first || "Aditya";
     });
 
-    $$("[data-name='groom']").forEach(el => {
+    $$("[data-name='groom']").forEach((el) => {
       el.textContent = data.names?.second || "Wiwit";
     });
 
-    $$("[data-name='couple']").forEach(el => {
+    $$("[data-name='couple']").forEach((el) => {
       el.textContent = couple;
     });
 
-    $$("[data-date-label]").forEach(el => {
+    $$("[data-date-label]").forEach((el) => {
       el.textContent = data.dateLabel || "";
     });
 
     // ==========================================
-    // 2. NAMA TAMU DARI URL (?to= atau ?guest=)
+    // 2. NAMA TAMU DARI URL (?to=, ?guest=, ?u=)
     // ==========================================
     const params = new URLSearchParams(window.location.search);
     const rawGuest = params.get("to") || params.get("guest") || params.get("u");
     if (rawGuest) {
       const cleanName = rawGuest.replace(/\?+$/, "").trim();
       if (cleanName) {
-        $$("#guestName, #guest-name, .guest-name, [data-guest]").forEach(el => {
+        $$("#guestName, #guest-name, .guest-name, [data-guest]").forEach((el) => {
           el.textContent = cleanName;
         });
         const rsvpNameInput = $("#rsvpForm input[name='name']");
-        if (rsvpNameInput && !rsvpNameInput.value) {
+        if (rsvpNameInput && !rsvpNameInput.value.trim()) {
           rsvpNameInput.value = cleanName;
         }
       }
@@ -55,13 +69,13 @@
     // ==========================================
     // 3. BACKGROUND & GALLERY IMAGES (CONFIG)
     // ==========================================
-    $$("[data-image]").forEach(el => {
+    $$("[data-image]").forEach((el) => {
       const key = el.dataset.image;
       const url = data.images?.[key];
       if (url) el.style.backgroundImage = `url("${url}")`;
     });
 
-    $$("[data-gallery]").forEach(el => {
+    $$("[data-gallery]").forEach((el) => {
       const url = data.gallery?.[Number(el.dataset.gallery)];
       if (url) el.src = url;
     });
@@ -69,11 +83,11 @@
     // ==========================================
     // 4. WEDDING EVENTS & GIFT (CONFIG)
     // ==========================================
-    ["ceremony", "reception"].forEach(key => {
+    ["ceremony", "reception"].forEach((key) => {
       const event = data.events?.[key];
       if (!event) return;
 
-      ["date", "time", "place"].forEach(field => {
+      ["date", "time", "place"].forEach((field) => {
         const el = $(`[data-event="${key}-${field}"]`);
         if (el) el.innerHTML = String(event[field] || "").replace(/\n/g, "<br>");
       });
@@ -82,7 +96,7 @@
       if (map && event.map) map.href = event.map;
     });
 
-    $$("[data-gift]").forEach(el => {
+    $$("[data-gift]").forEach((el) => {
       const field = el.dataset.gift;
       if (data.gift?.[field]) el.textContent = data.gift[field];
     });
@@ -94,14 +108,15 @@
     const menu = $("#menu");
 
     toggle?.addEventListener("click", () => {
+      if (!menu) return;
       const open = menu.classList.toggle("open");
       toggle.classList.toggle("active", open);
       toggle.setAttribute("aria-expanded", String(open));
     });
 
-    $$("#menu a").forEach(a => {
+    $$("#menu a").forEach((a) => {
       a.addEventListener("click", () => {
-        menu.classList.remove("open");
+        menu?.classList.remove("open");
         toggle?.classList.remove("active");
         toggle?.setAttribute("aria-expanded", "false");
       });
@@ -136,16 +151,19 @@
     // ==========================================
     // 7. SCROLL REVEAL ANIMATION
     // ==========================================
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("visible");
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.12 });
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.12 }
+    );
 
-    $$(".reveal").forEach(el => observer.observe(el));
+    $$(".reveal").forEach((el) => observer.observe(el));
 
     // ==========================================
     // 8. LOADER (1% -> 100%)
@@ -185,6 +203,7 @@
         e.preventDefault();
 
         if (guestCover) {
+          guestCover.classList.add("is-opened");
           guestCover.style.setProperty("display", "none", "important");
           guestCover.style.setProperty("visibility", "hidden", "important");
           guestCover.style.setProperty("opacity", "0", "important");
@@ -195,6 +214,11 @@
         document.body.classList.remove("lock-scroll");
         document.documentElement.style.overflow = "";
         document.body.style.overflow = "";
+        document.body.style.position = "";
+        document.body.style.width = "";
+        document.body.style.height = "";
+
+        playAllBgVideos();
 
         if (bgMusic) {
           bgMusic.loop = true;
@@ -210,17 +234,16 @@
           introSection.scrollIntoView({ behavior: "instant", block: "start" });
           window.scrollTo({ top: introSection.offsetTop, left: 0, behavior: "instant" });
           document.documentElement.style.scrollBehavior = prevScrollBehavior;
-
-          const introVideo = introSection.querySelector("video");
-          if (introVideo && introVideo.paused) {
-            introVideo.play().catch(() => {});
-          }
         }
 
         if (typeof AOS !== "undefined") {
           setTimeout(() => {
-            AOS.refreshHard();
-          }, 100);
+            if (typeof AOS.refreshHard === "function") {
+              AOS.refreshHard();
+            } else if (typeof AOS.refresh === "function") {
+              AOS.refresh();
+            }
+          }, 120);
         }
       });
     }
@@ -232,38 +255,78 @@
     const prewedIframe = document.getElementById("prewedYoutubeIframe");
 
     if (prewedSection && prewedIframe) {
-      const sendYTCommand = (func) => {
+      let shouldAutoplayYT = false;
+
+      // Pastikan parameter enablejsapi=1 dan mute=1 ada di URL iframe
+      try {
+        const currentSrc = prewedIframe.getAttribute("src") || "";
+        if (currentSrc) {
+          const urlObj = new URL(currentSrc, window.location.origin);
+          if (!urlObj.searchParams.has("enablejsapi")) {
+            urlObj.searchParams.set("enablejsapi", "1");
+          }
+          if (!urlObj.searchParams.has("mute")) {
+            urlObj.searchParams.set("mute", "1");
+          }
+          if (!urlObj.searchParams.has("playsinline")) {
+            urlObj.searchParams.set("playsinline", "1");
+          }
+          if (!urlObj.searchParams.has("origin") && window.location.origin.startsWith("http")) {
+            urlObj.searchParams.set("origin", window.location.origin);
+          }
+          const updatedSrc = urlObj.toString();
+          if (updatedSrc !== currentSrc) {
+            prewedIframe.setAttribute("src", updatedSrc);
+          }
+        }
+      } catch (_) {}
+
+      const sendYTCommand = (func, args = []) => {
         if (!prewedIframe.contentWindow) return;
         prewedIframe.contentWindow.postMessage(
-          JSON.stringify({ event: "command", func, args: [] }),
+          JSON.stringify({ event: "command", func, args }),
           "*"
         );
       };
 
-      prewedIframe.addEventListener("load", () => {
-        prewedIframe.contentWindow?.postMessage(
-          JSON.stringify({ event: "listening" }),
+      const triggerYTPlay = () => {
+        if (!prewedIframe.contentWindow) return;
+        prewedIframe.contentWindow.postMessage(
+          JSON.stringify({ event: "listening", id: prewedIframe.id || "prewedYoutubeIframe" }),
           "*"
         );
+        sendYTCommand("mute");
+        sendYTCommand("playVideo");
+      };
+
+      prewedIframe.addEventListener("load", () => {
+        if (shouldAutoplayYT) {
+          setTimeout(triggerYTPlay, 200);
+        }
       });
 
       const ytObserver = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
-              sendYTCommand("mute");
-              sendYTCommand("playVideo");
+              shouldAutoplayYT = true;
+              triggerYTPlay();
+              setTimeout(() => {
+                if (shouldAutoplayYT) sendYTCommand("playVideo");
+              }, 450);
+            } else {
+              shouldAutoplayYT = false;
             }
           });
         },
-        { threshold: 0.35 }
+        { threshold: 0.25 }
       );
 
       ytObserver.observe(prewedSection);
     }
 
     // ==========================================
-    // 11. DOWNLOAD FOTO DI LIGHTBOX
+    // 11. DOWNLOAD FOTO DI LIGHTBOX & KEYBOARD ESC
     // ==========================================
     const downloadBtn = document.getElementById("downloadBtn");
     if (downloadBtn) {
@@ -301,10 +364,17 @@
       });
     }
 
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        closeLightbox();
+      }
+    });
+
     // ==========================================
     // 12. RSVP & GOOGLE SHEETS + PAGINATION
     // ==========================================
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4W7sFprk_qx2WvDPrzRHj_dqMefFTVV9oYIImvP0Fo0lg9ccyOUxUTOStpr5h8QS6tg/exec";
+    const SCRIPT_URL =
+      "https://script.google.com/macros/s/AKfycbx4W7sFprk_qx2WvDPrzRHj_dqMefFTVV9oYIImvP0Fo0lg9ccyOUxUTOStpr5h8QS6tg/exec";
     const ITEMS_PER_PAGE = 4;
 
     const rsvpForm = document.getElementById("rsvpForm");
@@ -409,9 +479,9 @@
 
         const formData = new FormData(rsvpForm);
         const payload = {
-          name: formData.get("name").trim(),
-          message: formData.get("message").trim(),
-          attendance: formData.get("attendance")
+          name: String(formData.get("name") || "").trim(),
+          message: String(formData.get("message") || "").trim(),
+          attendance: String(formData.get("attendance") || "").trim()
         };
 
         if (!payload.name || !payload.message || !payload.attendance) return;
@@ -451,14 +521,24 @@
 
     loadWishes();
   });
+
+  // Fallback putar video latar belakang saat interaksi pertama
+  const resumeAllBgVideos = () => {
+    playAllBgVideos();
+  };
+  document.addEventListener("touchstart", resumeAllBgVideos, { once: true, passive: true });
+  document.addEventListener("click", resumeAllBgVideos, { once: true });
 })();
 
 // ==========================================
 // GLOBAL FUNCTIONS (DIPANGGIL DARI ONCLICK HTML)
 // ==========================================
 function copyToClipboard(containerId, buttonElement) {
-  const textToCopy = document.getElementById(containerId).innerText;
-  navigator.clipboard.writeText(textToCopy).then(() => {
+  const targetEl = document.getElementById(containerId);
+  if (!targetEl) return;
+  const textToCopy = targetEl.innerText.trim();
+
+  const onSuccess = () => {
     const originalText = buttonElement.innerText;
     buttonElement.innerText = "BERHASIL DISALIN!";
     buttonElement.style.background = "#e9e6df";
@@ -469,9 +549,33 @@ function copyToClipboard(containerId, buttonElement) {
       buttonElement.style.background = "rgba(233, 230, 223, 0.1)";
       buttonElement.style.color = "var(--paper)";
     }, 2000);
-  }).catch(err => {
+  };
+
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+    navigator.clipboard.writeText(textToCopy).then(onSuccess).catch(() => {
+      fallbackCopy(textToCopy, onSuccess);
+    });
+  } else {
+    fallbackCopy(textToCopy, onSuccess);
+  }
+}
+
+function fallbackCopy(text, onSuccess) {
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    document.execCommand("copy");
+    onSuccess();
+  } catch (err) {
     console.error("Gagal menyalin teks: ", err);
-  });
+  } finally {
+    document.body.removeChild(textarea);
+  }
 }
 
 function openLightbox(imgSrc) {
@@ -498,21 +602,3 @@ function closeLightbox() {
   const modal = document.getElementById("imageLightbox");
   if (modal) modal.style.display = "none";
 }
-
-// Jalankan semua background video (intro, globalVideo, closing) setelah user klik Buka Undangan
-document.querySelectorAll("video.bg-video").forEach((vid) => {
-  vid.muted = true;
-  vid.playsInline = true;
-  if (vid.paused) {
-    vid.play().catch(() => {});
-  }
-});
-
-const resumeAllBgVideos = () => {
-  document.querySelectorAll("video.bg-video").forEach((vid) => {
-    vid.muted = true;
-    if (vid.paused) vid.play().catch(() => {});
-  });
-};
-document.addEventListener("touchstart", resumeAllBgVideos, { once: true, passive: true });
-document.addEventListener("click", resumeAllBgVideos, { once: true });
